@@ -165,9 +165,18 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
-app.get("/auth/:token", async (req, res) => {
+app.get("/auth", async (req, res) => {
   try {
-    const { token } = req.params;
+    const header = req.headers.authorization;
+    if (!header) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    const token = header?.split(" ")[1];
+    if (!token) {
+      throw new Error("UNAUTHORIZED");
+    }
+
     const decoded = jwt.verify(
       token,
       process.env.SECRET_KEY ?? "SUPER_SECRET_KEY"

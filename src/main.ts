@@ -47,13 +47,50 @@ app.get("/posts/:id", async (req, res) => {
   }
 });
 
+app.put("/posts/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, image, authorId } = req.body;
+    const post = await prisma.post.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!post) throw new Error("NOT_FOUND");
+
+    console.log(post.authorId);
+    console.log(authorId);
+    if (post?.authorId !== authorId) {
+      throw new Error("BAD_REQUEST");
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: {
+        id: post.id,
+      },
+      data: {
+        title,
+        content,
+        image,
+      },
+    });
+
+    res.status(200).json(updatedPost);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.post("/posts/create", async (req, res) => {
   try {
-    const { title, content, authorId } = req.body;
+    const { title, content, authorId, image } = req.body;
+    console.log(authorId);
     const post = await prisma.post.create({
       data: {
         title,
         content,
+        image,
         author: { connect: { id: authorId } },
       },
     });
@@ -66,7 +103,9 @@ app.post("/posts/create", async (req, res) => {
 
 app.put("/posts/publish/:id", async (req, res) => {
   try {
+    console.log("start publish");
     const { id } = req.params;
+    console.log("@Id", id);
     const post = await prisma.post.update({
       where: {
         id,
@@ -75,6 +114,7 @@ app.put("/posts/publish/:id", async (req, res) => {
         published: true,
       },
     });
+    console.log("@Published", post);
 
     res.status(200).json(post);
   } catch (error) {
@@ -122,7 +162,7 @@ app.post("/auth/login", async (req, res) => {
       }
     );
 
-    res.status(200).json(token);
+    res.status(200).json({ token });
   } catch (error) {
     console.log(error);
   }
@@ -165,14 +205,10 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
-app.get("/auth", async (req, res) => {
+app.get("/auth/:token", async (req, res) => {
   try {
-    const header = req.headers.authorization;
-    if (!header) {
-      throw new Error("UNAUTHORIZED");
-    }
+    const { token } = req.params;
 
-    const token = header?.split(" ")[1];
     if (!token) {
       throw new Error("UNAUTHORIZED");
     }

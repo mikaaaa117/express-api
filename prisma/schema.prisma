@@ -17,6 +17,7 @@ model User {
   name       String
   posts      Post[]
   comments   Comment[]
+  avatar     String?
   likedPosts Post[]    @relation("likedPosts")
 }
 
